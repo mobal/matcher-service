@@ -1,0 +1,52 @@
+{
+  "info": {
+    "name": "Matcher Service API",
+    "description": "Docker E2E checks using an auth-service JWT.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Health",
+      "request": {"method": "GET", "url": "{{baseUrl}}/health"},
+      "event": [{"listen": "test", "script": {"exec": [
+        "pm.test('healthy', () => pm.response.to.have.status(200));"
+      ]}}]
+    },
+    {
+      "name": "List movies",
+      "request": {"method": "GET", "header": [{"key": "Authorization", "value": "Bearer {{accessToken}}"}], "url": "{{baseUrl}}/api/v1/movies"},
+      "event": [{"listen": "test", "script": {"exec": [
+        "pm.test('movies succeed', () => pm.response.to.have.status(200));",
+        "pm.expect(pm.response.json().data.length).to.be.greaterThan(0);",
+        "pm.environment.set('movieId', pm.response.json().data[0].uuid);"
+      ]}}]
+    },
+    {
+      "name": "List trackers",
+      "request": {"method": "GET", "header": [{"key": "Authorization", "value": "Bearer {{accessToken}}"}], "url": "{{baseUrl}}/api/v1/trackers"},
+      "event": [{"listen": "test", "script": {"exec": [
+        "pm.test('trackers succeed', () => pm.response.to.have.status(200));",
+        "pm.expect(pm.response.json().data.length).to.be.greaterThan(0);",
+        "pm.environment.set('trackerId', pm.response.json().data[0].uuid);"
+      ]}}]
+    },
+    {
+      "name": "List torrents",
+      "request": {"method": "GET", "header": [{"key": "Authorization", "value": "Bearer {{accessToken}}"}], "url": "{{baseUrl}}/api/v1/torrents"},
+      "event": [{"listen": "test", "script": {"exec": [
+        "pm.test('torrents succeed', () => pm.response.to.have.status(200));",
+        "pm.expect(pm.response.json().data.length).to.be.greaterThan(0);"
+      ]}}]
+    },
+    {
+      "name": "Movie detail",
+      "request": {"method": "GET", "header": [{"key": "Authorization", "value": "Bearer {{accessToken}}"}], "url": "{{baseUrl}}/api/v1/movies/{{movieId}}"},
+      "event": [{"listen": "test", "script": {"exec": ["pm.test('movie detail succeeds', () => pm.response.to.have.status(200));"]}}]
+    },
+    {
+      "name": "Tracker detail",
+      "request": {"method": "GET", "header": [{"key": "Authorization", "value": "Bearer {{accessToken}}"}], "url": "{{baseUrl}}/api/v1/trackers/{{trackerId}}"},
+      "event": [{"listen": "test", "script": {"exec": ["pm.test('tracker detail succeeds', () => pm.response.to.have.status(200));"]}}]
+    }
+  ]
+}

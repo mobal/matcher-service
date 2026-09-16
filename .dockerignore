@@ -1,0 +1,9 @@
+.git
+.venv
+__pycache__
+.pytest_cache
+.ruff_cache
+.coverage
+data
+matcher_service.egg-info
+postman

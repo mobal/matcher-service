@@ -1,0 +1,22 @@
+{
+  "request": {
+    "method": "GET",
+    "urlPath": "/omdb",
+    "queryParameters": {
+      "apikey": { "equalTo": "local-omdb-key" },
+      "t": { "equalTo": "Demo Movie" }
+    }
+  },
+  "response": {
+    "status": 200,
+    "headers": { "Content-Type": "application/json" },
+    "jsonBody": {
+      "Response": "True",
+      "Title": "Demo Movie",
+      "Year": "2025",
+      "Released": "01 Jan 2025",
+      "imdbID": "tt0000001",
+      "Type": "movie"
+    }
+  }
+}

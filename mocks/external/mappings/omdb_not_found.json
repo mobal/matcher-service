@@ -1,0 +1,15 @@
+{
+  "request": {
+    "method": "GET",
+    "urlPath": "/omdb",
+    "queryParameters": {
+      "apikey": { "equalTo": "local-omdb-key" },
+      "t": { "equalTo": "Missing Movie" }
+    }
+  },
+  "response": {
+    "status": 200,
+    "headers": { "Content-Type": "application/json" },
+    "jsonBody": { "Response": "False", "Error": "Movie not found!" }
+  }
+}

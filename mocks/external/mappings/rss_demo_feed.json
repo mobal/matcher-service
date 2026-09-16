@@ -1,0 +1,11 @@
+{
+  "request": {
+    "method": "GET",
+    "urlPath": "/rss/demo"
+  },
+  "response": {
+    "status": 200,
+    "headers": { "Content-Type": "application/rss+xml" },
+    "body": "<?xml version=\"1.0\"?><rss version=\"2.0\"><channel><title>Demo Tracker</title><item><title>Demo.Movie.2025.1080p.BluRay</title><link>magnet:?xt=demo</link></item></channel></rss>"
+  }
+}
