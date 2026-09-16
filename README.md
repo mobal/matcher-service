@@ -64,6 +64,28 @@ docker compose down -v --remove-orphans
 The collection and environment are in `postman/`; WireMock mappings are in
 `mocks/external/mappings/`. Newman tests are Docker E2E tests, not pytest tests.
 
+## Docker local runtime
+
+To run the API in Docker with SQLite mounted at `./data`:
+
+```shell
+mkdir -p data
+cp .env.example .env.local
+docker compose -f docker-compose.local.yml up --build
+```
+
+The API is available at `http://127.0.0.1:8080`. Schedule the search task on the Docker host with:
+
+```cron
+0 * * * * cd /path/to/matcher-service && docker compose -f docker-compose.local.yml run --rm --no-deps app uv run --no-dev python -m app.cli search
+```
+
+The CLI runs Alembic migrations before the task. Stop the API with:
+
+```shell
+docker compose -f docker-compose.local.yml down
+```
+
 ## GitHub Actions
 
 The workflow is in `.github/workflows/`. It installs dependencies from
