@@ -10,7 +10,7 @@ Requirements: Python 3.14 and [uv](https://docs.astral.sh/uv/).
 
 ```shell
 uv sync
-cp .env.example .env.local
+cp .env.example .env
 uv run uvicorn app.api_handler:app --reload
 ```
 
@@ -70,7 +70,7 @@ To run the API in Docker with SQLite mounted at `./data`:
 
 ```shell
 mkdir -p data
-cp .env.example .env.local
+cp .env.example .env
 docker compose -f docker-compose.local.yml up --build
 ```
 

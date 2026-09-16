@@ -5,7 +5,7 @@ services:
       sh -c "uv run --no-dev alembic upgrade head &&
       uv run --no-dev uvicorn app.api_handler:app --host 0.0.0.0 --port 8080"
     env_file:
-      - .env.local
+      - .env
     environment:
       DATABASE_PATH: /data/db.sqlite3
     volumes:

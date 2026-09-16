@@ -11,7 +11,7 @@ class Settings(BaseSettings):
     debug: bool = False
     log_level: str = "INFO"
     environment: str = "development"
-    database_path: Path = Path("./data/matcher-service.sqlite3")
+    database_path: Path = Path("./data/db.sqlite3")
     auth_jwt_secret: str | None = None
     auth_jwt_issuer: str = "dev-auth-service"
     auth_jwt_audience: str = "https://dev-matcher-service"
@@ -32,7 +32,7 @@ class Settings(BaseSettings):
     mail_from_address: str = "matcher-service@example.com"
     mail_from_name: str = "Matcher Service"
     model_config = SettingsConfigDict(
-        env_file=(".env", ".env.local"), env_file_encoding="utf-8", extra="ignore"
+        env_file=(".env"), env_file_encoding="utf-8", extra="ignore"
     )
 
 

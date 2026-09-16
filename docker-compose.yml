@@ -14,7 +14,7 @@ services:
     build: .
     command: uv run --no-dev python -m scripts.init_test_data
     environment:
-      DATABASE_PATH: /data/matcher-service.sqlite3
+      DATABASE_PATH: /data/db.sqlite3
       AUTH_JWT_SECRET: local-newman-secret-that-is-at-least-32-bytes
       AUTH_JWT_ISSUER: dev-auth-service
       AUTH_JWT_AUDIENCE: https://dev-matcher-service
@@ -30,7 +30,7 @@ services:
     build: .
     command: uv run --no-dev uvicorn app.api_handler:app --host 0.0.0.0 --port 8080
     environment:
-      DATABASE_PATH: /data/matcher-service.sqlite3
+      DATABASE_PATH: /data/db.sqlite3
       AUTH_JWT_SECRET: local-newman-secret-that-is-at-least-32-bytes
       AUTH_JWT_ISSUER: dev-auth-service
       AUTH_JWT_AUDIENCE: https://dev-matcher-service
