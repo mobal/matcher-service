@@ -20,8 +20,8 @@ COPY scripts ./scripts
 COPY tests ./tests
 COPY README.md ./README.md
 RUN uv sync --frozen --no-dev \
-    && groupadd --system matcher \
-    && useradd --system --gid matcher --home-dir /app --no-create-home matcher \
+    && groupadd --gid 1000 matcher \
+    && useradd --uid 1000 --gid matcher --home-dir /app --no-create-home matcher \
     && mkdir -p /data /tmp/uv-cache \
     && chown -R matcher:matcher /data /tmp/uv-cache
 
