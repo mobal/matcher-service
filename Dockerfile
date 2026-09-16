@@ -19,7 +19,14 @@ COPY app ./app
 COPY scripts ./scripts
 COPY tests ./tests
 COPY README.md ./README.md
-RUN uv sync --frozen --no-dev
+RUN uv sync --frozen --no-dev \
+    && groupadd --system matcher \
+    && useradd --system --gid matcher --home-dir /app --no-create-home matcher \
+    && mkdir -p /data /tmp/uv-cache \
+    && chown -R matcher:matcher /data /tmp/uv-cache
+
+ENV UV_CACHE_DIR=/tmp/uv-cache
+USER matcher
 
 EXPOSE 8080
 
