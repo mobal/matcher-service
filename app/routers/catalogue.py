@@ -1,15 +1,20 @@
 import math
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi import APIRouter, Depends, HTTPException, Query, Security, status
+from fastapi.security import HTTPBearer
 
 from app.dependencies import get_catalogue_service, get_current_user
 from app.repositories import CatalogueRepository
 from app.services import CatalogueService
 from app.settings import settings
 
+bearer_scheme = HTTPBearer(scheme_name="bearerAuth", auto_error=False)
+
 router = APIRouter(
-    prefix="/v1", tags=["catalogue"], dependencies=[Depends(get_current_user)]
+    prefix="/v1",
+    tags=["catalogue"],
+    dependencies=[Depends(get_current_user), Security(bearer_scheme)],
 )
 
 

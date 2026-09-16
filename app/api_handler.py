@@ -1,3 +1,5 @@
+import logging
+
 from fastapi import FastAPI, HTTPException, Request, status
 from fastapi.encoders import jsonable_encoder
 from fastapi.exceptions import RequestValidationError
@@ -5,12 +7,40 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.gzip import GZipMiddleware
 from fastapi.responses import JSONResponse
 
+from app.logging_config import configure_logging
 from app.middleware import CorrelationIdMiddleware
 from app.routers.catalogue import router as catalogue_router
 from app.settings import settings
 
+configure_logging(getattr(settings, "log_level", "INFO"))
+
+logger = logging.getLogger(__name__)
+
 app = FastAPI(
-    title="Matcher Service API", version=settings.app_version, debug=settings.debug
+    title="Matcher Service API",
+    summary="Torrent catalogue and matching service",
+    description=(
+        "Authenticated catalogue endpoints and background workflows for "
+        "trackers, rules, torrents, movies, and statistics. Authentication "
+        "tokens are issued by the external auth-service."
+    ),
+    version=settings.app_version,
+    debug=settings.debug,
+    openapi_url="/openapi.json",
+    docs_url="/docs",
+    redoc_url="/redoc",
+    contact={"name": "Matcher Service Team"},
+    license_info={"name": "MIT"},
+    openapi_tags=[
+        {
+            "name": "system",
+            "description": "Service health and operational endpoints.",
+        },
+        {
+            "name": "catalogue",
+            "description": "Read-only movies, torrents, trackers, and rules.",
+        },
+    ],
 )
 app.add_middleware(CorrelationIdMiddleware)
 app.add_middleware(GZipMiddleware)
