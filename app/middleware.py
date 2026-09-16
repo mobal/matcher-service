@@ -1,3 +1,5 @@
+import logging
+import time
 import uuid
 from collections.abc import Awaitable, Callable
 from contextvars import ContextVar
@@ -5,6 +7,7 @@ from typing import Any
 
 CORRELATION_ID_HEADER = "x-correlation-id"
 correlation_id: ContextVar[str] = ContextVar(CORRELATION_ID_HEADER, default="")
+logger = logging.getLogger(__name__)
 
 
 class CorrelationIdMiddleware:
@@ -22,10 +25,14 @@ class CorrelationIdMiddleware:
         value = headers.get(CORRELATION_ID_HEADER.encode(), b"").decode() or str(
             uuid.uuid4()
         )
-        correlation_id.set(value)
+        correlation_token = correlation_id.set(value)
+        started_at = time.perf_counter()
+        response_status = 500
 
         async def send_with_correlation(message: dict) -> None:
+            nonlocal response_status
             if message["type"] == "http.response.start":
+                response_status = message.get("status", 500)
                 message = dict(message)
                 message["headers"] = [
                     *message.get("headers", []),
@@ -33,4 +40,15 @@ class CorrelationIdMiddleware:
                 ]
             await send(message)
 
-        await self.app(scope, receive, send_with_correlation)
+        try:
+            await self.app(scope, receive, send_with_correlation)
+        finally:
+            logger.info(
+                "%s %s %s %.3fs",
+                scope.get("method", ""),
+                scope.get("path", ""),
+                response_status,
+                time.perf_counter() - started_at,
+                extra={"correlation_id": value},
+            )
+            correlation_id.reset(correlation_token)

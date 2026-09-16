@@ -88,6 +88,10 @@ async def unhandled_error_handler(_: Request, error: Exception) -> JSONResponse:
         if settings.debug
         else "Internal Server Error"
     )
+    logger.error(
+        "Unhandled application error",
+        exc_info=(type(error), error, error.__traceback__),
+    )
     return JSONResponse(status_code=500, content={"status": 500, "error": detail})
 
 

@@ -1,7 +1,10 @@
+import logging
 import smtplib
 from email.message import EmailMessage
 
 from app.settings import settings
+
+logger = logging.getLogger(__name__)
 
 
 class MailService:
@@ -12,6 +15,9 @@ class MailService:
             recipients if recipients is not None else settings.notification_recipients
         )
         if not settings.mail_enabled or not addresses:
+            logger.debug(
+                "Email delivery skipped: mail is disabled or recipients are empty"
+            )
             return False
 
         message = EmailMessage()
@@ -26,4 +32,5 @@ class MailService:
             if settings.mail_username and settings.mail_password:
                 client.login(settings.mail_username, settings.mail_password)
             client.send_message(message)
+        logger.info("Email sent: subject=%r recipients=%d", subject, len(addresses))
         return True

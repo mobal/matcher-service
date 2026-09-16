@@ -1,3 +1,4 @@
+import logging
 import re
 from dataclasses import dataclass
 
@@ -6,6 +7,8 @@ from app.repositories import CatalogueRepository
 from app.repositories.torrent_repository import TorrentRepository
 from app.services.mail_service import MailService
 from app.services.movie_service import MovieService
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass(frozen=True)
@@ -32,7 +35,9 @@ class SearchService:
 
     def search(self) -> int:
         created = 0
+        logger.info("Starting torrent search")
         for tracker in self._trackers_with_rules():
+            logger.info("Processing tracker %s", tracker["title"])
             for title, uri in self._rss.fetch_items(tracker["rss"]):
                 normalized = self.normalize_title(title)
                 if not normalized or self._torrents.exists_by_title(normalized):
@@ -61,6 +66,7 @@ class SearchService:
                             ),
                         )
                 created += 1
+        logger.info("Torrent search completed; created %d torrent(s)", created)
         return created
 
     def _trackers_with_rules(self) -> list[dict]:

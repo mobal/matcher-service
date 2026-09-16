@@ -9,6 +9,7 @@ class Settings(BaseSettings):
     app_name: str = "matcher-service"
     app_version: str = "1.0.0"
     debug: bool = False
+    log_level: str = "INFO"
     environment: str = "development"
     database_path: Path = Path("./data/matcher-service.sqlite3")
     auth_jwt_secret: str | None = None
