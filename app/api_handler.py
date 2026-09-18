@@ -9,6 +9,7 @@ from fastapi.responses import JSONResponse
 
 from app.logging_config import configure_logging
 from app.middleware import CorrelationIdMiddleware
+from app.models.response.catalogue import HealthResponse
 from app.routers.catalogue import router as catalogue_router
 from app.settings import settings
 
@@ -54,8 +55,8 @@ app.include_router(catalogue_router, prefix="/api")
 
 
 @app.get("/health", tags=["system"])
-def health() -> dict[str, str]:
-    return {"status": "healthy"}
+def health() -> HealthResponse:
+    return HealthResponse(status="healthy")
 
 
 @app.exception_handler(RequestValidationError)

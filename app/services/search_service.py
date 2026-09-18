@@ -3,6 +3,9 @@ import re
 from dataclasses import dataclass
 
 from app.clients.rss_client import RSSClient
+from app.models.request.movie import MovieLookupRequest
+from app.models.request.torrent import TorrentCreateRequest
+from app.models.response.catalogue import CatalogueRow
 from app.repositories.catalogue_repository import CatalogueRepository
 from app.repositories.torrent_repository import TorrentRepository
 from app.services.mail_service import MailService
@@ -37,28 +40,28 @@ class SearchService:
         created = 0
         logger.info("Starting torrent search")
         for tracker in self._trackers_with_rules():
-            logger.info("Processing tracker %s", tracker["title"])
-            for title, uri in self._rss.fetch_items(tracker["rss"]):
+            logger.info("Processing tracker %s", tracker.title)
+            for title, uri in self._rss.fetch_items(tracker.rss or ""):
                 created += self._process_item(tracker, title, uri)
         logger.info("Torrent search completed; created %d torrent(s)", created)
 
         return created
 
-    def _process_item(self, tracker: dict, title: str, uri: str) -> int:
+    def _process_item(self, tracker: CatalogueRow, title: str, uri: str) -> int:
         normalized = self.normalize_title(title)
         if not normalized or self._torrents.exists_by_title(normalized):
             return 0
         if not any(
-            self.matches_rule(normalized, item["value"]) for item in tracker["rules"]
+            self.matches_rule(normalized, item.value or "") for item in tracker.rules
         ):
             return 0
 
         torrent = self._torrents.create(
-            title=normalized, uri=uri, tracker_id=tracker["id"]
+            TorrentCreateRequest(title=normalized, uri=uri, tracker_id=tracker.id or 0)
         )
         metadata = self.metadata(normalized)
         if metadata:
-            self._attach_movie(torrent["id"], metadata, normalized, uri)
+            self._attach_movie(torrent.id or 0, metadata, normalized, uri)
 
         return 1
 
@@ -66,27 +69,29 @@ class SearchService:
         self, torrent_id: int, metadata: TorrentMetadata, title: str, uri: str
     ) -> None:
         movie = self._movies.get_movie_info(
-            metadata.title, metadata.year, metadata.media_type
+            MovieLookupRequest(
+                title=metadata.title,
+                year=metadata.year,
+                media_type=metadata.media_type,
+            )
         )
         if not movie:
             return
 
-        self._torrents.attach_movie(torrent_id, movie["id"])
+        self._torrents.attach_movie(torrent_id, movie.id or 0)
         self._mail.send(
-            subject=movie.get("title", metadata.title),
+            subject=movie.title or metadata.title,
             body=(
-                f"Movie: {movie.get('title', metadata.title)}\n"
-                f"Torrent: {title}\n"
-                f"URI: {uri}"
+                f"Movie: {movie.title or metadata.title}\nTorrent: {title}\nURI: {uri}"
             ),
         )
 
-    def _trackers_with_rules(self) -> list[dict]:
+    def _trackers_with_rules(self) -> list[CatalogueRow]:
         trackers, _ = self._catalogue.page("trackers", 1, 10000)
         for tracker in trackers:
-            tracker["rules"] = self._catalogue.tracker_rules(tracker["id"])
+            tracker.rules = self._catalogue.tracker_rules(tracker.id or 0)
 
-        return [tracker for tracker in trackers if tracker["rules"]]
+        return [tracker for tracker in trackers if tracker.rules]
 
     @staticmethod
     def metadata(title: str) -> TorrentMetadata | None:

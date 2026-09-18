@@ -1,15 +1,15 @@
 import logging
-from typing import Any
 
 import jwt
 from fastapi import HTTPException, status
 
+from app.models.response.auth import UserClaims
 from app.settings import settings
 
 logger = logging.getLogger(__name__)
 
 
-def decode_token(token: str) -> dict[str, Any]:
+def decode_token(token: str) -> UserClaims:
     if not settings.auth_jwt_secret:
         logger.error("JWT verification requested without configured signing secret")
         raise HTTPException(
@@ -17,12 +17,14 @@ def decode_token(token: str) -> dict[str, Any]:
             "Auth JWT verification is not configured",
         )
     try:
-        return jwt.decode(
-            token,
-            settings.auth_jwt_secret,
-            algorithms=["HS256"],
-            issuer=settings.auth_jwt_issuer,
-            audience=settings.auth_jwt_audience,
+        return UserClaims.model_validate(
+            jwt.decode(
+                token,
+                settings.auth_jwt_secret,
+                algorithms=["HS256"],
+                issuer=settings.auth_jwt_issuer,
+                audience=settings.auth_jwt_audience,
+            )
         )
     except jwt.PyJWTError as error:
         logger.warning("JWT validation failed: %s", type(error).__name__)

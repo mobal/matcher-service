@@ -3,13 +3,14 @@ from datetime import datetime, timedelta
 from typing import ClassVar, Protocol
 from zoneinfo import ZoneInfo
 
+from app.models.response.statistics import StatisticsReport, StatisticsTorrent
 from app.repositories.statistics_repository import StatisticsRepository
 from app.services.mail_service import MailService
 from app.settings import settings
 
 
 class StatisticsRepositoryProtocol(Protocol):
-    def between(self, start: datetime, end: datetime) -> list[dict]: ...
+    def between(self, start: datetime, end: datetime) -> list[StatisticsTorrent]: ...
 
 
 class MailServiceProtocol(Protocol):
@@ -34,17 +35,15 @@ class StatisticsService:
         self._repository = repository or StatisticsRepository()
         self._mail = mail or MailService()
 
-    def report(
-        self, period: str, start: datetime, end: datetime
-    ) -> dict[str, list[dict]]:
+    def report(self, period: str, start: datetime, end: datetime) -> StatisticsReport:
         if period not in self._SUBJECTS:
             raise ValueError("period must be daily, weekly, monthly, or yearly")
         torrents = self._repository.between(start, end)
-        grouped: defaultdict[str, list[dict]] = defaultdict(list)
+        grouped: defaultdict[str, list[StatisticsTorrent]] = defaultdict(list)
         for torrent in torrents:
-            grouped[self._group_key(torrent["created_at"], period)].append(torrent)
+            grouped[self._group_key(torrent.created_at, period)].append(torrent)
 
-        return dict(grouped)
+        return StatisticsReport(dict(grouped))
 
     def send(self, period: str, start: datetime, end: datetime) -> bool:
         groups = self.report(period, start, end)
@@ -78,8 +77,8 @@ class StatisticsService:
         )
 
     @staticmethod
-    def _group_key(created_at: str, period: str) -> str:
-        timestamp = datetime.fromisoformat(created_at)
+    def _group_key(created_at: datetime, period: str) -> str:
+        timestamp = created_at
         if timestamp.tzinfo is None:
             timestamp = timestamp.replace(tzinfo=ZoneInfo("UTC"))
         local = timestamp.astimezone(ZoneInfo(settings.timezone))
@@ -95,10 +94,10 @@ class StatisticsService:
         return f"{week_start} - {week_end}"
 
     @staticmethod
-    def _render(groups: dict[str, list[dict]]) -> str:
+    def _render(groups: StatisticsReport) -> str:
         lines: list[str] = []
-        for label, torrents in groups.items():
+        for label, torrents in groups.root.items():
             lines.append(f"{label}: {len(torrents)} torrent(s)")
-            lines.extend(f"- {torrent['title']}" for torrent in torrents)
+            lines.extend(f"- {torrent.title}" for torrent in torrents)
 
         return "\n".join(lines)

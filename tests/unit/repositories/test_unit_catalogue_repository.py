@@ -1,5 +1,6 @@
 from unittest.mock import MagicMock, patch
 
+from app.models.response.catalogue import CatalogueRow
 from app.repositories.catalogue_repository import CatalogueRepository
 
 
@@ -17,7 +18,7 @@ class TestCatalogueRepository:
         ):
             result, total = catalogue_repository.page("movies", 2, 10)
 
-        assert result == [{"id": 1, "title": "Movie"}]
+        assert result == [CatalogueRow(id=1, title="Movie")]
         assert total == 2
         assert database_connection.execute.call_count == 2
 
@@ -38,7 +39,7 @@ class TestCatalogueRepository:
         with patch(
             "app.repositories.catalogue_repository.connection", database_connection
         ):
-            assert catalogue_repository.by_uuid("movies", "u") == {"uuid": "u"}
+            assert catalogue_repository.by_uuid("movies", "u") == CatalogueRow(uuid="u")
 
         try:
             catalogue_repository.by_uuid("users", "u")
@@ -61,8 +62,8 @@ class TestCatalogueRepository:
             rules = catalogue_repository.rules(2, 1, 10, "rule")
             tracker_rules = catalogue_repository.tracker_rules(2)
 
-        assert rules == ([{"id": 1, "tracker_id": 2}], 1)
-        assert tracker_rules == [{"id": 1, "tracker_id": 2}]
+        assert rules == ([CatalogueRow(id=1, tracker_id=2)], 1)
+        assert tracker_rules == [CatalogueRow(id=1, tracker_id=2)]
 
     def test_torrent_details_adds_related_objects(
         self, catalogue_repository: CatalogueRepository, database_connection
@@ -76,8 +77,8 @@ class TestCatalogueRepository:
             "app.repositories.catalogue_repository.connection", database_connection
         ):
             result = catalogue_repository.torrent_details(
-                {"tracker_id": 1, "movie_id": 3}
+                CatalogueRow(tracker_id=1, movie_id=3)
             )
 
-        assert result["tracker_title"] == "Tracker"
-        assert result["movie"] == {"id": 3, "title": "Movie"}
+        assert result.tracker_title == "Tracker"
+        assert result.movie == CatalogueRow(id=3, title="Movie")

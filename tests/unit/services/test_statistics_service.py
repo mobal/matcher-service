@@ -4,6 +4,7 @@ from unittest.mock import Mock
 
 import pytest
 
+from app.models.response.statistics import StatisticsTorrent
 from app.services.statistics_service import StatisticsService
 
 
@@ -35,7 +36,7 @@ class TestStatisticsService:
     ) -> None:
         repository = cast(Mock, statistics_service._repository)
         repository.between.return_value = [
-            {"title": "A", "created_at": "2025-01-06T12:00:00+00:00"}
+            StatisticsTorrent(title="A", created_at="2025-01-06T12:00:00+00:00")
         ]
 
         service = statistics_service
@@ -55,15 +56,19 @@ class TestStatisticsService:
     ) -> None:
         repository = cast(Mock, statistics_service._repository)
         repository.between.return_value = [
-            {"title": "Before midnight", "created_at": "2025-01-01T23:30:00+00:00"},
-            {"title": "After midnight", "created_at": "2025-01-02T00:30:00+00:00"},
+            StatisticsTorrent(
+                title="Before midnight", created_at="2025-01-01T23:30:00+00:00"
+            ),
+            StatisticsTorrent(
+                title="After midnight", created_at="2025-01-02T00:30:00+00:00"
+            ),
         ]
 
         report = statistics_service.report(
             "daily", datetime(2025, 1, 1, tzinfo=UTC), datetime(2025, 1, 3, tzinfo=UTC)
         )
         assert list(report) == ["2025-01-02"]
-        assert [torrent["title"] for torrent in report["2025-01-02"]] == [
+        assert [torrent.title for torrent in report["2025-01-02"]] == [
             "Before midnight",
             "After midnight",
         ]
@@ -105,7 +110,7 @@ class TestStatisticsService:
     ) -> None:
         repository = cast(Mock, statistics_service._repository)
         repository.between.return_value = [
-            {"title": "Demo", "created_at": "2025-01-01T12:00:00+00:00"}
+            StatisticsTorrent(title="Demo", created_at="2025-01-01T12:00:00+00:00")
         ]
         mail = cast(Mock, statistics_service._mail)
         mail.send.return_value = True

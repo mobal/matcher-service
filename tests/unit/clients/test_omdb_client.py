@@ -2,6 +2,7 @@ from unittest.mock import Mock, patch
 
 from app.clients.omdb_client import OMDbClient
 from app.clients.rss_client import RSSClient
+from app.models.request.movie import MovieLookupRequest
 from app.settings import Settings
 
 
@@ -9,7 +10,9 @@ class TestOMDbClient:
     def test_returns_none_without_api_key(self) -> None:
         client_settings = Settings(omdb_api_key=None)
         with patch("app.clients.omdb_client.settings", client_settings):
-            result = OMDbClient().get_movie("Movie", 2025, "movie")
+            result = OMDbClient().get_movie(
+                MovieLookupRequest(title="Movie", year=2025, media_type="movie")
+            )
 
         assert result is None
 
@@ -23,11 +26,15 @@ class TestOMDbClient:
                 "app.clients.omdb_client.httpx.get", return_value=response
             ) as request,
         ):
-            result = OMDbClient().get_movie("Movie", 2025, "movie")
+            result = OMDbClient().get_movie(
+                MovieLookupRequest(title="Movie", year=2025, media_type="movie")
+            )
 
         request.assert_called_once()
         response.raise_for_status.assert_called_once_with()
-        assert result == {"Response": "True", "Title": "Movie"}
+        assert result is not None
+        assert result.response == "True"
+        assert result.title == "Movie"
 
 
 class TestRSSClient:

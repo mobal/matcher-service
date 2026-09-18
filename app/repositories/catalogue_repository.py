@@ -2,6 +2,7 @@ from contextlib import closing
 from typing import Any, ClassVar
 
 from app.connection import connection
+from app.models.response.catalogue import CatalogueRow
 
 
 class CatalogueRepository:
@@ -11,7 +12,9 @@ class CatalogueRepository:
         "torrents": "SELECT t.*, tr.title AS tracker_title FROM torrents t JOIN trackers tr ON tr.id=t.tracker_id AND tr.deleted_at IS NULL WHERE t.deleted_at IS NULL ORDER BY t.created_at DESC",
     }
 
-    def page(self, resource: str, page: int, size: int) -> tuple[list[dict], int]:
+    def page(
+        self, resource: str, page: int, size: int
+    ) -> tuple[list[CatalogueRow], int]:
         query = self._LIST_QUERIES[resource]
         with closing(connection()) as db:
             total = db.execute(f"SELECT COUNT(*) FROM ({query})").fetchone()[0]
@@ -19,9 +22,9 @@ class CatalogueRepository:
                 f"{query} LIMIT ? OFFSET ?", (size, (page - 1) * size)
             ).fetchall()
 
-        return [dict(row) for row in rows], total
+        return [CatalogueRow.model_validate(dict(row)) for row in rows], total
 
-    def by_uuid(self, table: str, value: str) -> dict | None:
+    def by_uuid(self, table: str, value: str) -> CatalogueRow | None:
         if table not in {"movies", "trackers", "torrents"}:
             raise ValueError(f"Unsupported table: {table}")
         with closing(connection()) as db:
@@ -29,11 +32,11 @@ class CatalogueRepository:
                 f"SELECT * FROM {table} WHERE uuid=? AND deleted_at IS NULL", (value,)
             ).fetchone()
 
-        return dict(row) if row else None
+        return CatalogueRow.model_validate(dict(row)) if row else None
 
     def rules(
         self, tracker_id: int, page: int, size: int, rule_uuid: str | None = None
-    ) -> tuple[list[dict], int]:
+    ) -> tuple[list[CatalogueRow], int]:
         where = "tracker_id=? AND deleted_at IS NULL"
         args: list[Any] = [tracker_id]
         if rule_uuid:
@@ -48,30 +51,31 @@ class CatalogueRepository:
                 [*args, size, (page - 1) * size],
             ).fetchall()
 
-        return [dict(row) for row in rows], total
+        return [CatalogueRow.model_validate(dict(row)) for row in rows], total
 
-    def tracker_rules(self, tracker_id: int) -> list[dict]:
+    def tracker_rules(self, tracker_id: int) -> list[CatalogueRow]:
         with closing(connection()) as db:
             rows = db.execute(
                 "SELECT * FROM rules WHERE tracker_id=? AND deleted_at IS NULL ORDER BY created_at DESC",
                 (tracker_id,),
             ).fetchall()
 
-        return [dict(row) for row in rows]
+        return [CatalogueRow.model_validate(dict(row)) for row in rows]
 
-    def torrent_details(self, row: dict) -> dict:
+    def torrent_details(self, row: CatalogueRow) -> CatalogueRow:
         with closing(connection()) as db:
             tracker = db.execute(
                 "SELECT title FROM trackers WHERE id=? AND deleted_at IS NULL",
-                (row["tracker_id"],),
+                (row.tracker_id,),
             ).fetchone()
             movie = db.execute(
                 "SELECT * FROM movies WHERE id=? AND deleted_at IS NULL",
-                (row.get("movie_id"),),
+                (row.movie_id,),
             ).fetchone()
 
-        return {
-            **row,
-            "tracker_title": tracker["title"] if tracker else None,
-            "movie": dict(movie) if movie else None,
-        }
+        return row.model_copy(
+            update={
+                "tracker_title": tracker["title"] if tracker else None,
+                "movie": CatalogueRow.model_validate(dict(movie)) if movie else None,
+            }
+        )

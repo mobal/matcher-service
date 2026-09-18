@@ -1,10 +1,11 @@
-from typing import Annotated, Any
+from typing import Annotated
 
 from fastapi import Depends, Request
 
 from app.clients.omdb_client import OMDbClient
 from app.clients.rss_client import RSSClient
 from app.exceptions import InvalidCredentialsException
+from app.models.response.auth import UserClaims
 from app.repositories.catalogue_repository import CatalogueRepository
 from app.repositories.movie_repository import MovieRepository
 from app.repositories.statistics_repository import StatisticsRepository
@@ -17,7 +18,7 @@ from app.services.search_service import SearchService
 from app.services.statistics_service import StatisticsService
 
 
-def get_current_user(request: Request) -> dict[str, Any]:
+def get_current_user(request: Request) -> UserClaims:
     scheme, _, raw_token = request.headers.get("Authorization", "").partition(" ")
     if scheme.lower() != "bearer" or not raw_token:
         raise InvalidCredentialsException("Not authenticated")
@@ -85,4 +86,4 @@ def get_statistics_service(
     return StatisticsService(repository, mail)
 
 
-CurrentUser = Annotated[dict[str, Any], Depends(get_current_user)]
+CurrentUser = Annotated[UserClaims, Depends(get_current_user)]

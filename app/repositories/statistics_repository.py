@@ -2,10 +2,11 @@ from contextlib import closing
 from datetime import UTC, datetime
 
 from app.connection import connection
+from app.models.response.statistics import StatisticsTorrent
 
 
 class StatisticsRepository:
-    def between(self, start: datetime, end: datetime) -> list[dict]:
+    def between(self, start: datetime, end: datetime) -> list[StatisticsTorrent]:
         start_utc = start.astimezone(UTC)
         end_utc = end.astimezone(UTC)
         with closing(connection()) as db:
@@ -19,4 +20,4 @@ class StatisticsRepository:
                 (start_utc.isoformat(), end_utc.isoformat()),
             ).fetchall()
 
-        return [dict(row) for row in rows]
+        return [StatisticsTorrent.model_validate(dict(row)) for row in rows]

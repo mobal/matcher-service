@@ -1,5 +1,7 @@
 from unittest.mock import patch
 
+from app.models.request.movie import MovieCreateRequest
+from app.models.response.catalogue import CatalogueRow
 from app.repositories.movie_repository import MovieRepository
 
 
@@ -14,7 +16,7 @@ class TestMovieRepository:
         with patch("app.repositories.movie_repository.connection", database_connection):
             result = movie_repository.get_by_hash("hash")
 
-        assert result == {"id": 1, "title": "Movie"}
+        assert result == CatalogueRow(id=1, title="Movie")
 
     def test_get_by_hash_returns_none_when_missing(
         self, movie_repository: MovieRepository, database_connection
@@ -32,6 +34,14 @@ class TestMovieRepository:
             "title": "Movie",
         }
         with patch("app.repositories.movie_repository.connection", database_connection):
-            result = movie_repository.create({"title": "Movie"})
+            result = movie_repository.create(
+                MovieCreateRequest(
+                    uuid="uuid",
+                    title="Movie",
+                    hash="hash",
+                    created_at="2025-01-01T00:00:00+00:00",
+                    updated_at="2025-01-01T00:00:00+00:00",
+                )
+            )
 
-        assert result == {"id": 4, "title": "Movie"}
+        assert result == CatalogueRow(id=4, title="Movie")

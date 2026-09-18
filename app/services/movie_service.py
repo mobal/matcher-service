@@ -1,8 +1,10 @@
 import hashlib
 from datetime import UTC, datetime
-from typing import Any
+from uuid import uuid4
 
 from app.clients.omdb_client import OMDbClient
+from app.models.request.movie import MovieCreateRequest, MovieLookupRequest
+from app.models.response.catalogue import CatalogueRow
 from app.repositories.movie_repository import MovieRepository
 
 
@@ -17,48 +19,46 @@ class MovieService:
 
         return hashlib.sha1(value.encode(), usedforsecurity=False).hexdigest()
 
-    def get_movie_info(
-        self, title: str, year: int | None, media_type: str | None
-    ) -> dict[str, Any] | None:
-        movie_hash = self.movie_hash(title, year)
+    def get_movie_info(self, request: MovieLookupRequest) -> CatalogueRow | None:
+        movie_hash = self.movie_hash(request.title, request.year)
         cached = self._repository.get_by_hash(movie_hash)
         if cached:
             return cached
 
-        data = self._client.get_movie(title, year, media_type)
+        data = self._client.get_movie(request)
         if not data:
             return None
         now = datetime.now(UTC).isoformat()
-        movie = {
-            "uuid": __import__("uuid").uuid4().hex,
-            "title": data.get("Title", title),
-            "year": data.get("Year"),
-            "rated": data.get("Rated"),
-            "released": self._date(data.get("Released")),
-            "runtime": data.get("Runtime"),
-            "genre": data.get("Genre"),
-            "director": data.get("Director"),
-            "writer": data.get("Writer"),
-            "actors": data.get("Actors"),
-            "plot": data.get("Plot"),
-            "language": data.get("Language"),
-            "country": data.get("Country"),
-            "awards": data.get("Awards"),
-            "poster": data.get("Poster"),
-            "metascore": data.get("Metascore"),
-            "imdb_rating": data.get("imdbRating"),
-            "imdb_votes": data.get("imdbVotes"),
-            "imdb_id": data.get("imdbID"),
-            "type": data.get("Type"),
-            "dvd": self._date(data.get("DVD")),
-            "box_office": data.get("BoxOffice"),
-            "production": data.get("Production"),
-            "website": data.get("Website"),
-            "response": data.get("Response"),
-            "hash": movie_hash,
-            "created_at": now,
-            "updated_at": now,
-        }
+        movie = MovieCreateRequest(
+            uuid=uuid4().hex,
+            title=data.title or request.title,
+            year=data.year,
+            rated=data.rated,
+            released=self._date(data.released),
+            runtime=data.runtime,
+            genre=data.genre,
+            director=data.director,
+            writer=data.writer,
+            actors=data.actors,
+            plot=data.plot,
+            language=data.language,
+            country=data.country,
+            awards=data.awards,
+            poster=data.poster,
+            metascore=data.metascore,
+            imdb_rating=data.imdb_rating,
+            imdb_votes=data.imdb_votes,
+            imdb_id=data.imdb_id,
+            type=data.media_type,
+            dvd=self._date(data.dvd),
+            box_office=data.box_office,
+            production=data.production,
+            website=data.website,
+            response=data.response,
+            hash=movie_hash,
+            created_at=now,
+            updated_at=now,
+        )
 
         return self._repository.create(movie)
 

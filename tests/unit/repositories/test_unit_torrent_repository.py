@@ -1,5 +1,7 @@
 from unittest.mock import patch
 
+from app.models.request.torrent import TorrentCreateRequest
+from app.models.response.catalogue import CatalogueRow
 from app.repositories.torrent_repository import TorrentRepository
 
 
@@ -37,7 +39,7 @@ class TestTorrentRepository:
             "app.repositories.torrent_repository.connection", database_connection
         ):
             result = torrent_repository.create(
-                title="Movie", uri="magnet", tracker_id=1
+                TorrentCreateRequest(title="Movie", uri="magnet", tracker_id=1)
             )
 
-        assert result == {"id": 2, "title": "Movie"}
+        assert result == CatalogueRow(id=2, title="Movie")
