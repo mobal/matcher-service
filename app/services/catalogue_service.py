@@ -1,4 +1,4 @@
-from app.repositories import CatalogueRepository
+from app.repositories.catalogue_repository import CatalogueRepository
 
 
 class CatalogueService:
@@ -7,4 +7,5 @@ class CatalogueService:
 
     def page(self, resource: str, page: int, size: int) -> dict:
         rows, total = self.repository.page(resource, page, size)
+
         return {"rows": rows, "total": total, "page": page, "size": size}

@@ -82,7 +82,7 @@ async def http_error_handler(_: Request, error: HTTPException) -> JSONResponse:
 
 
 @app.exception_handler(Exception)
-async def unhandled_error_handler(_: Request, error: Exception) -> JSONResponse:
+async def exception_handler(_: Request, error: Exception) -> JSONResponse:
     detail = (
         f"{type(error).__name__}: {error}"
         if settings.debug

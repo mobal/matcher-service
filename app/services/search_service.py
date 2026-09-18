@@ -3,7 +3,7 @@ import re
 from dataclasses import dataclass
 
 from app.clients.rss_client import RSSClient
-from app.repositories import CatalogueRepository
+from app.repositories.catalogue_repository import CatalogueRepository
 from app.repositories.torrent_repository import TorrentRepository
 from app.services.mail_service import MailService
 from app.services.movie_service import MovieService
@@ -39,40 +39,53 @@ class SearchService:
         for tracker in self._trackers_with_rules():
             logger.info("Processing tracker %s", tracker["title"])
             for title, uri in self._rss.fetch_items(tracker["rss"]):
-                normalized = self.normalize_title(title)
-                if not normalized or self._torrents.exists_by_title(normalized):
-                    continue
-                if not any(
-                    self.matches_rule(normalized, item["value"])
-                    for item in tracker["rules"]
-                ):
-                    continue
-                torrent = self._torrents.create(
-                    title=normalized, uri=uri, tracker_id=tracker["id"]
-                )
-                metadata = self.metadata(normalized)
-                if metadata:
-                    movie = self._movies.get_movie_info(
-                        metadata.title, metadata.year, metadata.media_type
-                    )
-                    if movie:
-                        self._torrents.attach_movie(torrent["id"], movie["id"])
-                        self._mail.send(
-                            subject=movie.get("title", metadata.title),
-                            body=(
-                                f"Movie: {movie.get('title', metadata.title)}\n"
-                                f"Torrent: {normalized}\n"
-                                f"URI: {uri}"
-                            ),
-                        )
-                created += 1
+                created += self._process_item(tracker, title, uri)
         logger.info("Torrent search completed; created %d torrent(s)", created)
+
         return created
+
+    def _process_item(self, tracker: dict, title: str, uri: str) -> int:
+        normalized = self.normalize_title(title)
+        if not normalized or self._torrents.exists_by_title(normalized):
+            return 0
+        if not any(
+            self.matches_rule(normalized, item["value"]) for item in tracker["rules"]
+        ):
+            return 0
+
+        torrent = self._torrents.create(
+            title=normalized, uri=uri, tracker_id=tracker["id"]
+        )
+        metadata = self.metadata(normalized)
+        if metadata:
+            self._attach_movie(torrent["id"], metadata, normalized, uri)
+
+        return 1
+
+    def _attach_movie(
+        self, torrent_id: int, metadata: TorrentMetadata, title: str, uri: str
+    ) -> None:
+        movie = self._movies.get_movie_info(
+            metadata.title, metadata.year, metadata.media_type
+        )
+        if not movie:
+            return
+
+        self._torrents.attach_movie(torrent_id, movie["id"])
+        self._mail.send(
+            subject=movie.get("title", metadata.title),
+            body=(
+                f"Movie: {movie.get('title', metadata.title)}\n"
+                f"Torrent: {title}\n"
+                f"URI: {uri}"
+            ),
+        )
 
     def _trackers_with_rules(self) -> list[dict]:
         trackers, _ = self._catalogue.page("trackers", 1, 10000)
         for tracker in trackers:
             tracker["rules"] = self._catalogue.tracker_rules(tracker["id"])
+
         return [tracker for tracker in trackers if tracker["rules"]]
 
     @staticmethod
@@ -83,6 +96,7 @@ class SearchService:
         if not match:
             return None
         release = match.group(2)
+
         return TorrentMetadata(
             title=match.group(1).replace(".", " "),
             year=int(release) if release.isdigit() else None,
@@ -91,7 +105,8 @@ class SearchService:
 
     @staticmethod
     def normalize_title(title: str) -> str:
-        without_groups = re.sub(r"[\[\{\(].*?[\]\}\)]", "", title).strip()
+        without_groups = re.sub(r"[\[\{\(][^\]\}\)]*[\]\}\)]", "", title).strip()
+
         return re.sub(r"\s+", " ", without_groups).replace(" ", ".")
 
     @staticmethod
@@ -104,4 +119,5 @@ class SearchService:
             if position < 0:
                 return False
             remainder = remainder[position + len(part) :]
+
         return True

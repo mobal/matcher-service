@@ -18,4 +18,5 @@ class StatisticsRepository:
                 """,
                 (start_utc.isoformat(), end_utc.isoformat()),
             ).fetchall()
+
         return [dict(row) for row in rows]

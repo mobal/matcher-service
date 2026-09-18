@@ -15,16 +15,19 @@ class OMDbClient:
         if not settings.omdb_api_key:
             logger.warning("OMDb lookup skipped because no API key is configured")
             return None
+
         params: dict[str, str | int] = {
             "apikey": settings.omdb_api_key,
             "plot": "full",
             "r": "json",
             "t": title,
         }
+
         if year is not None:
             params["y"] = year
         if media_type:
             params["type"] = media_type
+
         logger.info("Looking up movie metadata for %r", title)
         response = httpx.get(
             settings.omdb_api_url, params=params, timeout=settings.http_timeout_seconds
@@ -34,5 +37,6 @@ class OMDbClient:
         if data.get("Response") == "False":
             logger.info("OMDb returned no metadata for %r", title)
             return None
+
         logger.info("OMDb metadata found for %r", title)
         return data

@@ -18,6 +18,7 @@ class CatalogueRepository:
             rows = db.execute(
                 f"{query} LIMIT ? OFFSET ?", (size, (page - 1) * size)
             ).fetchall()
+
         return [dict(row) for row in rows], total
 
     def by_uuid(self, table: str, value: str) -> dict | None:
@@ -27,6 +28,7 @@ class CatalogueRepository:
             row = db.execute(
                 f"SELECT * FROM {table} WHERE uuid=? AND deleted_at IS NULL", (value,)
             ).fetchone()
+
         return dict(row) if row else None
 
     def rules(
@@ -45,6 +47,7 @@ class CatalogueRepository:
                 f"SELECT * FROM rules WHERE {where} ORDER BY created_at DESC LIMIT ? OFFSET ?",
                 [*args, size, (page - 1) * size],
             ).fetchall()
+
         return [dict(row) for row in rows], total
 
     def tracker_rules(self, tracker_id: int) -> list[dict]:
@@ -53,6 +56,7 @@ class CatalogueRepository:
                 "SELECT * FROM rules WHERE tracker_id=? AND deleted_at IS NULL ORDER BY created_at DESC",
                 (tracker_id,),
             ).fetchall()
+
         return [dict(row) for row in rows]
 
     def torrent_details(self, row: dict) -> dict:
@@ -65,6 +69,7 @@ class CatalogueRepository:
                 "SELECT * FROM movies WHERE id=? AND deleted_at IS NULL",
                 (row.get("movie_id"),),
             ).fetchone()
+
         return {
             **row,
             "tracker_title": tracker["title"] if tracker else None,

@@ -43,6 +43,7 @@ class StatisticsService:
         grouped: defaultdict[str, list[dict]] = defaultdict(list)
         for torrent in torrents:
             grouped[self._group_key(torrent["created_at"], period)].append(torrent)
+
         return dict(grouped)
 
     def send(self, period: str, start: datetime, end: datetime) -> bool:
@@ -50,6 +51,7 @@ class StatisticsService:
         if not groups:
             return False
         body = self._render(groups)
+
         return self._mail.send(subject=self._SUBJECTS[period], body=body)
 
     @staticmethod
@@ -69,6 +71,7 @@ class StatisticsService:
         else:
             raise ValueError("period must be daily, weekly, monthly, or yearly")
         timezone = ZoneInfo(settings.timezone)
+
         return (
             datetime.combine(first, datetime.min.time(), timezone),
             datetime.combine(last, datetime.max.time(), timezone),
@@ -88,6 +91,7 @@ class StatisticsService:
             return local.strftime("%Y")
         week_start = local.date() - timedelta(days=local.weekday())
         week_end = week_start + timedelta(days=6)
+
         return f"{week_start} - {week_end}"
 
     @staticmethod
@@ -96,4 +100,5 @@ class StatisticsService:
         for label, torrents in groups.items():
             lines.append(f"{label}: {len(torrents)} torrent(s)")
             lines.extend(f"- {torrent['title']}" for torrent in torrents)
+
         return "\n".join(lines)

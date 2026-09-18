@@ -33,4 +33,5 @@ class MailService:
                 client.login(settings.mail_username, settings.mail_password)
             client.send_message(message)
         logger.info("Email sent: subject=%r recipients=%d", subject, len(addresses))
+
         return True

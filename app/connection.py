@@ -8,4 +8,5 @@ def connection() -> sqlite3.Connection:
     db = sqlite3.connect(settings.database_path, isolation_level=None)
     db.row_factory = sqlite3.Row
     db.execute("PRAGMA foreign_keys = ON")
+
     return db

@@ -14,6 +14,7 @@ class MovieService:
     @staticmethod
     def movie_hash(title: str, year: int | None) -> str:
         value = f"{title}+{year}" if year is not None else title
+
         return hashlib.sha1(value.encode(), usedforsecurity=False).hexdigest()
 
     def get_movie_info(
@@ -23,6 +24,7 @@ class MovieService:
         cached = self._repository.get_by_hash(movie_hash)
         if cached:
             return cached
+
         data = self._client.get_movie(title, year, media_type)
         if not data:
             return None
@@ -57,6 +59,7 @@ class MovieService:
             "created_at": now,
             "updated_at": now,
         }
+
         return self._repository.create(movie)
 
     @staticmethod

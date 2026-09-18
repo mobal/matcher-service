@@ -4,7 +4,7 @@ import pytest
 
 from app.clients.omdb_client import OMDbClient
 from app.clients.rss_client import RSSClient
-from app.repositories import CatalogueRepository
+from app.repositories.catalogue_repository import CatalogueRepository
 from app.repositories.movie_repository import MovieRepository
 from app.repositories.statistics_repository import StatisticsRepository
 from app.repositories.torrent_repository import TorrentRepository

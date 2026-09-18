@@ -11,6 +11,7 @@ class MovieRepository:
                 "SELECT * FROM movies WHERE hash=? AND deleted_at IS NULL",
                 (movie_hash,),
             ).fetchone()
+
         return dict(row) if row else None
 
     def create(self, data: dict[str, Any]) -> dict[str, Any]:
@@ -22,4 +23,5 @@ class MovieRepository:
                 f"INSERT INTO movies({columns}) VALUES({placeholders})", values
             ).lastrowid
             row = db.execute("SELECT * FROM movies WHERE id=?", (movie_id,)).fetchone()
+
         return dict(row)

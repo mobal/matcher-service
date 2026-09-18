@@ -35,6 +35,7 @@ class TorrentRepository:
             row = db.execute(
                 "SELECT * FROM torrents WHERE id=?", (torrent_id,)
             ).fetchone()
+
         return dict(row)
 
     def attach_movie(self, torrent_id: int, movie_id: int) -> None:
