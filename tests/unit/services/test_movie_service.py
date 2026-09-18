@@ -52,3 +52,8 @@ class TestMovieService:
         assert MovieService._date(None) is None
         assert MovieService._date("N/A") is None
         assert MovieService._date("invalid") is None
+
+    def test_movie_hash_distinguishes_missing_year(self) -> None:
+        assert MovieService.movie_hash("Movie", None) != MovieService.movie_hash(
+            "Movie", 2025
+        )

@@ -1,5 +1,8 @@
 from unittest.mock import Mock, patch
 
+import pytest
+from defusedxml import ElementTree
+
 from app.clients.omdb_client import OMDbClient
 from app.clients.rss_client import RSSClient
 from app.models.request.movie import MovieLookupRequest
@@ -36,6 +39,18 @@ class TestOMDbClient:
         assert result.response == "True"
         assert result.title == "Movie"
 
+    def test_returns_none_when_omdb_reports_no_match(self) -> None:
+        client_settings = Settings(omdb_api_key="key")
+        response = Mock()
+        response.json.return_value = {"Response": "False", "Error": "Not found"}
+        with (
+            patch("app.clients.omdb_client.settings", client_settings),
+            patch("app.clients.omdb_client.httpx.get", return_value=response),
+        ):
+            result = OMDbClient().get_movie(MovieLookupRequest(title="Missing"))
+
+        assert result is None
+
 
 class TestRSSClient:
     def test_parses_feed_items(self) -> None:
@@ -47,3 +62,9 @@ class TestRSSClient:
 
         assert result == [("A", "u")]
         response.raise_for_status.assert_called_once_with()
+
+    def test_rejects_malformed_feed(self) -> None:
+        response = Mock(content=b"<rss><channel>")
+        with patch("app.clients.rss_client.httpx.get", return_value=response):
+            with pytest.raises(ElementTree.ParseError):
+                RSSClient().fetch_items("https://tracker.test/rss")

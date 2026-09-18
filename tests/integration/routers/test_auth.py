@@ -8,6 +8,12 @@ from app.settings import settings
 
 
 class TestExternalAuth:
+    def test_health_endpoint_is_public(self, client: TestClient) -> None:
+        response = client.get("/health")
+
+        assert response.status_code == status.HTTP_200_OK
+        assert response.json() == {"status": "healthy"}
+
     def test_catalogue_requires_a_bearer_token(self, client: TestClient) -> None:
         response = client.get("/api/v1/movies")
 

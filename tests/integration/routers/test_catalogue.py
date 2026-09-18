@@ -7,6 +7,17 @@ from app.connection import connection
 
 
 class TestCatalogueApi:
+    def test_pagination_bounds_are_correct_for_middle_page(
+        self, client: TestClient, auth_headers: dict[str, str]
+    ) -> None:
+        response = client.get("/api/v1/movies?page=1&size=1", headers=auth_headers)
+
+        assert response.status_code == 200
+        body = response.json()
+        assert body["from"] == 1
+        assert body["to"] == 1
+        assert body["current_page"] == 1
+
     def test_missing_tracker_detail_returns_not_found(
         self, client: TestClient, auth_headers: dict[str, str]
     ) -> None:
