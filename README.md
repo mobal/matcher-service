@@ -50,6 +50,52 @@ mirrors the application layout under `tests/unit/` and `tests/integration/`.
 The `Makefile` provides formatting, linting, security, type-checking, and a
 combined `make test` target.
 
+## Adding new functionality
+
+Follow the application layers in this order:
+
+1. Add or update the database schema in a new Alembic migration.
+2. Apply the migration locally with `uv run alembic upgrade head`.
+3. Add request and response contracts under `app/models/request/` and
+   `app/models/response/`.
+4. Add the persistence operations to the appropriate repository in
+   `app/repositories/`.
+5. Add the business rules to a service in `app/services/`.
+6. Register the repository and service in `app/dependencies.py`.
+7. Add or update the endpoint in `app/routers/`.
+8. Add unit tests for repositories and services, then integration tests for
+   the HTTP behavior. Update the Postman collection when the public API
+   changes.
+9. Run `make format`, `make lint`, `make ty`, and `make test`.
+
+For a schema change, create the migration with:
+
+```shell
+uv run alembic revision -m "describe the schema change"
+uv run alembic upgrade head
+```
+
+Write and review the migration operations before committing them. This
+project does not configure SQLAlchemy metadata for autogeneration. Alembic
+uses `alembic/script.py.mako` when creating new migration files, so keep that
+template in the repository.
+
+### Inserting catalogue records
+
+Insert records in parent-to-child order so foreign-key references already
+exist:
+
+1. `trackers`
+2. `rules` for an existing tracker
+3. `movies`
+4. `torrents` referencing an existing tracker and, optionally, movie
+
+Use the repository or service layer for application data writes rather than
+writing directly to SQLite. Run migrations before inserting data, and provide
+all required fields, including UUIDs and timestamps. To add another entity,
+insert its independent records first, then insert records that reference
+them.
+
 ## Docker and Newman E2E
 
 The Compose stack starts a declarative WireMock external-API stub, initializes
